@@ -1,0 +1,33 @@
+location @image_server {
+                content_by_lua_file "conf/serve_image.lua";
+
+        }
+
+        location @video_server {
+                content_by_lua_file "conf/video_image.lua";
+
+        }
+        location ~ ^/images/(?<sig>[^/]+)/(?<size>[^/]+)/(?<path>.*\.(?<ext>[a-z_]*))$ {
+                root cache;
+                set_md5 $digest "$size/$path";
+                try_files /$digest.$ext @image_server;
+        }
+                location ~ ^/videos/(?<path>.*\.*)$ {
+                        root cache;
+                        try_files /$digest.$ext @video_server;
+                }
+
+                  location ~ ^/upload_lua(/.*)?$ {
+                        if ($http_content_type !~ "multipart/form-data") {
+                                return 406;
+                        }
+            #set $store_path /usr/local/images$1/;
+            set $store_path /data/images$1/;
+            content_by_lua_file conf/my_upload.lua;
+       # }
+
+        location ~ ^/delete/(.*)$ {
+            #set $file_path /usr/local/images/$1;
+            set $file_path /data/images/$1;
+            content_by_lua_file conf/my_delete.lua;
+        }
